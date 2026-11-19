@@ -1,30 +1,43 @@
 #!/usr/bin/env python3
-"""Copy entry.png into the make.fun output directory.
+"""Entry point for the make.fun news-image-20261119 bounty.
 
-Standard library only. The output directory comes from the
-MAKEFUN_OUTPUT_DIR environment variable (default /output) and is
-created if it does not exist yet. Exits with an error message if
-entry.png is missing from this script's own directory.
+Copies the poster (entry.png, sitting next to this file) into the
+output directory named by MAKEFUN_OUTPUT_DIR, defaulting to /output.
+Standard library only, no network access, no side effects beyond
+that single copy.
+
+Usage:
+    mkdir -p out && MAKEFUN_OUTPUT_DIR=out python3 main.py
 """
 
 import os
 import shutil
 import sys
-from pathlib import Path
+
+SOURCE_NAME = "entry.png"
+DEFAULT_OUTPUT = "/output"
 
 
-def main():
-    here = Path(__file__).resolve().parent
-    source = here / "entry.png"
-    if not source.is_file():
-        print(f"error: entry.png not found in {here}", file=sys.stderr)
+def locate_source() -> str:
+    """Absolute path of the poster shipped with this entry."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(here, SOURCE_NAME)
+
+
+def run() -> int:
+    source = locate_source()
+    if not os.path.isfile(source):
+        print(f"error: {source} is missing -- run gen_poster.py first",
+              file=sys.stderr)
         return 1
-    output_dir = Path(os.environ.get("MAKEFUN_OUTPUT_DIR", "/output"))
-    output_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(source, output_dir / "entry.png")
-    print(f"copied entry.png to {output_dir / 'entry.png'}")
+
+    target_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", DEFAULT_OUTPUT)
+    os.makedirs(target_dir, exist_ok=True)
+    destination = os.path.join(target_dir, SOURCE_NAME)
+    shutil.copyfile(source, destination)
+    print(f"copied {source} -> {destination}")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(run())
